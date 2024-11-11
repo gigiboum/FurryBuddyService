@@ -1,6 +1,6 @@
-package furrybuddy.rest;
+package ch.unil.furrybuddy.rest;
 
-import Domain.ExceptionDescription;
+import ch.unil.furrybuddy.domain.*;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;

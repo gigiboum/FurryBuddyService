@@ -1,4 +1,4 @@
-package furrybuddy.rest;
+package ch.unil.furrybuddy.rest;
 
 public class AdoptionRequestRessource {
 }

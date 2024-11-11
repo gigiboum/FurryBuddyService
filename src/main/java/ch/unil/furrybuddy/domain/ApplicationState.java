@@ -1,6 +1,5 @@
-package furrybuddy.domain;
+package ch.unil.furrybuddy.domain;
 
-import Domain.*;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 
@@ -56,7 +55,7 @@ public class ApplicationState {
         if (thePet == null) {
             return false;
         }
-//        thePet.replaceWith(pet);
+        thePet.replaceWith(pet);
         return true;
     }
 
@@ -108,11 +107,11 @@ public class ApplicationState {
 
     //UPDATE
     public boolean setPetOwner(UUID userID, PetOwner petOwner) {
-        var thePetOwner = petOwners.get(petOwner.getUserID());
+        var thePetOwner = petOwners.get(userID);
         if (thePetOwner == null) {
             return false;
         }
-//        thePetOwner.replaceWith(petOwner);
+        thePetOwner.replaceWith(petOwner);
         return true;
     }
 
@@ -140,7 +139,7 @@ public class ApplicationState {
         if (email == null || email.isBlank()) {
             throw new IllegalArgumentException("Adopter email is null or empty");
         }
-        if (users.containsKey(email)) {
+        if (users.containsKey(email)) { //TODO
             throw new IllegalArgumentException("Adopter email already exists");
         }
         if (adopter.getPassword() == null || adopter.getPassword().isBlank()) {
@@ -164,11 +163,11 @@ public class ApplicationState {
 
     //UPDATE
     public boolean setAdopter(UUID userID, Adopter adopter) {
-        var theAdopter = adopters.get(adopter.getUserID());
+        var theAdopter = adopters.get(userID);
         if (theAdopter == null) {
             return false;
         }
-//        theAdopter.replaceWith(adopter);
+        theAdopter.replaceWith(adopter);
         return true;
     }
 
@@ -186,68 +185,71 @@ public class ApplicationState {
     private void populateApplicationState() {
 
         // create some pets
-        var pepper = addPet(UUID.fromString("2b7da5cb"),
-                new Pet("Pepper",
-                        "Dog",
-                        "Labrador",
-                        false,
-                        Pet.Gender.FEMALE,
-                        "Cute and friendly",
-                        "Playful",
-                        "black",
-                        false,
-                        true,
-                        true,
-                        true,
-                        2,
-                        200.0,
-                        Pet.Status.AVAILABLE,
-                        true,
-                        true,
-                        "None"));
+        var pet = new Pet("Pepper",
+                "Dog",
+                "Labrador",
+                false,
+                Pet.Gender.FEMALE,
+                "Cute and friendly",
+                "Playful",
+                "black",
+                false,
+                true,
+                true,
+                true,
+                2,
+                200.0,
+                Pet.Status.AVAILABLE,
+                true,
+                true,
+                "None");
 
-        var nala = addPet(UUID.fromString("f3b7d1b1"),
-                new Pet("Nala",
-                        "Dog",
-                        "Shih-tzu",
-                        true,
-                        Pet.Gender.FEMALE,
-                        "Cheerful dog",
-                        "Independant",
-                        "beige",
-                        true,
-                        true,
-                        true,
-                        true,
-                        11,
-                        250.0,
-                        Pet.Status.AVAILABLE,
-                        true,
-                        true,
-                        "Cyst on back"));
+        var uuid = UUID.fromString("b8d0c81d-e1c6-4708-bd02-d218a23e4805");
 
-        var simba = addPet(UUID.fromString("b8d0c81d"),
-                new Pet("Simba",
-                        "Dog",
-                        "Shih-tzu",
-                        true,
-                        Pet.Gender.MALE,
-                        "Cheerful",
-                        "Clingy",
-                        "beige",
-                        true,
-                        true,
-                        true,
-                        true,
-                        10,
-                        250.0,
-                        Pet.Status.AVAILABLE,
-                        true,
-                        true,
-                        "Nearly blind"));
+        var pepper = addPet(uuid, pet);
+
+//        var nala = addPet(UUID.fromString("358e3775-682a-4b85-a2e1-d3bf0632baea"),
+//                new Pet("Nala",
+//                        "Dog",
+//                        "Shih-tzu",
+//                        true,
+//                        Pet.Gender.FEMALE,
+//                        "Cheerful dog",
+//                        "Independant",
+//                        "beige",
+//                        true,
+//                        true,
+//                        true,
+//                        true,
+//                        11,
+//                        250.0,
+//                        Pet.Status.AVAILABLE,
+//                        true,
+//                        true,
+//                        "Cyst on back"));
+
+//        var simba = addPet(UUID.fromString("17792447-fd66-464b-b27c-615a7d420d05"),
+//                new Pet("Simba",
+//                        "Dog",
+//                        "Shih-tzu",
+//                        true,
+//                        Pet.Gender.MALE,
+//                        "Cheerful",
+//                        "Clingy",
+//                        "beige",
+//                        true,
+//                        true,
+//                        true,
+//                        true,
+//                        10,
+//                        250.0,
+//                        Pet.Status.AVAILABLE,
+//                        true,
+//                        true,
+//                        "Nearly blind"));
 
         // pet owner
-        var alice = new PetOwner(
+        var petOwner =  new PetOwner(
                 "alice@gmail.com",
                 "password123",
                 "Alice",
@@ -260,8 +262,10 @@ public class ApplicationState {
                 User.Role.PET_OWNER
         );
 
+        var alice = addPetOwner(UUID.fromString("d79b117e-6cd5-44f0-8ab0-8c87ccda04f0"), petOwner);
+
         // Adopter
-        var bob = new Adopter(
+        var adopter = new Adopter(
                 "bob@gmail.com",
                 "1234",
                 "Bob",
@@ -273,11 +277,12 @@ public class ApplicationState {
                 ),
                 User.Role.ADOPTER
         );
+//        var bob = addAdopter(UUID.fromString("8c512725-df7e-4929-9066-6465e5d5d4b0"), adopter );
 
-        var advertisement = new Advertisement(pepper,alice, pepper.getDescription(),alice.getLocation(), Advertisement.Status.AVAILABLE);
+//        var advertisement = new Advertisement(pepper,alice, pepper.getDescription(),alice.getLocation(), Advertisement.Status.AVAILABLE);
 
-        var request = new AdoptionRequest(bob, advertisement, AdoptionRequest.Status.PENDING);
-        request.getAdopter();
+//        var request = new AdoptionRequest(bob, advertisement, AdoptionRequest.Status.PENDING);
+//        request.getAdopter();
 
     }
 }

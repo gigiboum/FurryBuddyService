@@ -1,7 +1,7 @@
-package furrybuddy.rest;
+package ch.unil.furrybuddy.rest;
 
-import Domain.PetOwner;
-import furrybuddy.domain.ApplicationState;
+import ch.unil.furrybuddy.domain.*;
+import ch.unil.furrybuddy.domain.ApplicationState;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
