@@ -1,5 +1,7 @@
 package ch.unil.furrybuddy.domain;
 
+import ch.unil.furrybuddy.rest.AdoptionRequestRessource;
+import ch.unil.furrybuddy.rest.AdvertisementRessource;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 
@@ -14,6 +16,8 @@ public class ApplicationState {
     private Map<UUID, PetOwner> petOwners;
     private Map<UUID, Pet> pets;
     private Map<UUID, User> users;
+    private Map<UUID, Advertisement> advertisements;
+    private Map<UUID, AdoptionRequest> adoptionRequests;
 
     @PostConstruct
     public void init() {
@@ -21,6 +25,8 @@ public class ApplicationState {
         petOwners = new TreeMap<>();
         pets = new TreeMap<>();
         users = new TreeMap<>();
+        advertisements = new TreeMap<>();
+        adoptionRequests = new TreeMap<>();
 
         populateApplicationState();
     }
@@ -79,16 +85,16 @@ public class ApplicationState {
     }
 
     public PetOwner addPetOwner(UUID userID, PetOwner petOwner) {
-        var email = petOwner.getEmail();
-        if (email == null || email.isBlank()) {
-            throw new IllegalArgumentException("PetOwner email is null or empty");
-        }
-        if (users.containsKey(email)) {
-            throw new IllegalArgumentException("PetOwner email already exists");
-        }
-        if (petOwner.getPassword() == null || petOwner.getPassword().isBlank()) {
-            throw new IllegalArgumentException("PetOwner password is null or empty");
-        }
+//        var email = petOwner.getEmail();
+//        if (email == null || email.isBlank()) {
+//            throw new IllegalArgumentException("PetOwner email is null or empty");
+//        }
+//        if (users.containsKey(email)) {
+//            throw new IllegalArgumentException("PetOwner email already exists");
+//        }
+//        if (petOwner.getPassword() == null || petOwner.getPassword().isBlank()) {
+//            throw new IllegalArgumentException("PetOwner password is null or empty");
+//        }
 
         petOwner.setUserID(userID);
         petOwners.put(userID, petOwner);
@@ -135,16 +141,16 @@ public class ApplicationState {
     }
 
     public Adopter addAdopter(UUID userID, Adopter adopter) {
-        var email = adopter.getEmail();
-        if (email == null || email.isBlank()) {
-            throw new IllegalArgumentException("Adopter email is null or empty");
-        }
-        if (users.containsKey(email)) { //TODO
-            throw new IllegalArgumentException("Adopter email already exists");
-        }
-        if (adopter.getPassword() == null || adopter.getPassword().isBlank()) {
-            throw new IllegalArgumentException("adopter password is null or empty");
-        }
+//        var email = adopter.getEmail();
+//        if (email == null || email.isBlank()) {
+//            throw new IllegalArgumentException("Adopter email is null or empty");
+//        }
+//        if (users.containsKey(email)) { //TODO
+//            throw new IllegalArgumentException("Adopter email already exists");
+//        }
+//        if (adopter.getPassword() == null || adopter.getPassword().isBlank()) {
+//            throw new IllegalArgumentException("adopter password is null or empty");
+//        }
 
         adopter.setUserID(userID);
         adopters.put(userID, adopter);
@@ -181,108 +187,270 @@ public class ApplicationState {
         return true;
     }
 
+    //ADVERTISEMENTS
+    //CREATE
+    public Advertisement addAdvertisement(Advertisement advertisement) {
+        if (advertisement.getAdvertisementID() != null) {
+            return addAdvertisement(advertisement.getAdvertisementID(), advertisement);
+        }
+        return addAdvertisement(UUID.randomUUID(), advertisement);
+    }
+
+    public Advertisement addAdvertisement(UUID advertisementID, Advertisement advertisement) {
+//        var petownerads = advertisement.getPetOwner().getAdvertisements();
+        advertisements.put(advertisementID, advertisement);
+//        petownerads.add(advertisement);
+        return advertisement;
+    }
+
+    // READ
+    public Advertisement getAdvertisement(UUID advertisementID) {
+        return advertisements.get(advertisementID);
+    }
+
+    public Map<UUID, Advertisement> getAllAds() {
+        return advertisements;
+    }
+
+    //UPDATE
+    public boolean setAdvertisement(UUID advertisementID, Advertisement advertisement) {
+        var theAdvertisement = advertisements.get(advertisementID);
+        if (theAdvertisement == null) {
+            return false;
+        }
+        theAdvertisement.replaceWith(advertisement);
+        return true;
+    }
+
+    //DELETE
+    public boolean removeAdvertisement(UUID advertisementID) {
+        var advertisement = advertisements.get(advertisementID);
+        if (advertisement == null) {
+            return false;
+        }
+        advertisements.remove(advertisementID);
+        return true;
+    }
+
+    //ADOPTION REQUESTS
+    //CREATE
+    public AdoptionRequest addAdoptionRequest(AdoptionRequest adoptionRequest) {
+        if (adoptionRequest.getRequestID() != null) {
+            return addAdoptionRequest(adoptionRequest.getRequestID(), adoptionRequest);
+        }
+        return addAdoptionRequest(UUID.randomUUID(), adoptionRequest);
+    }
+
+    public AdoptionRequest addAdoptionRequest(UUID adoptionRequestID, AdoptionRequest adoptionRequest) {
+        adoptionRequests.put(adoptionRequestID, adoptionRequest);
+        return adoptionRequest;
+    }
+
+    // READ
+    public AdoptionRequest getAdoptionRequest(UUID adoptionRequestID) {
+        return adoptionRequests.get(adoptionRequestID);
+    }
+
+    public Map<UUID, AdoptionRequest> getAllAdoptionRequests() {
+        return adoptionRequests;
+    }
+
+    //UPDATE
+    public boolean setAdoptionRequest(UUID adoptionRequestID, AdoptionRequest adoptionRequest) {
+        var theAdoptionRequest = adoptionRequests.get(adoptionRequestID);
+        if (theAdoptionRequest == null) {
+            return false;
+        }
+        theAdoptionRequest.replaceWith(adoptionRequest);
+        return true;
+    }
+
+    //DELETE
+    public boolean removeAdoptionRequest(UUID adoptionRequestID) {
+        var adoptionRequest = adoptionRequests.get(adoptionRequestID);
+        if (adoptionRequest == null) {
+            return false;
+        }
+        adoptionRequests.remove(adoptionRequestID);
+        return true;
+    }
+
     // create objects
     private void populateApplicationState() {
 
-        // create some pets
-        var pet = new Pet("Pepper",
-                "Dog",
-                "Labrador",
-                false,
-                Pet.Gender.FEMALE,
-                "Cute and friendly",
-                "Playful",
-                "black",
-                false,
-                true,
-                true,
-                true,
-                2,
-                200.0,
-                Pet.Status.AVAILABLE,
-                true,
-                true,
-                "None");
+        /*
+        CREATE PETS
+         */
 
-        var uuid = UUID.fromString("b8d0c81d-e1c6-4708-bd02-d218a23e4805");
-
-        var pepper = addPet(uuid, pet);
-
-//        var nala = addPet(UUID.fromString("358e3775-682a-4b85-a2e1-d3bf0632baea"),
-//                new Pet("Nala",
-//                        "Dog",
-//                        "Shih-tzu",
-//                        true,
-//                        Pet.Gender.FEMALE,
-//                        "Cheerful dog",
-//                        "Independant",
-//                        "beige",
-//                        true,
-//                        true,
-//                        true,
-//                        true,
-//                        11,
-//                        250.0,
-//                        Pet.Status.AVAILABLE,
-//                        true,
-//                        true,
-//                        "Cyst on back"));
-
-//        var simba = addPet(UUID.fromString("17792447-fd66-464b-b27c-615a7d420d05"),
-//                new Pet("Simba",
-//                        "Dog",
-//                        "Shih-tzu",
-//                        true,
-//                        Pet.Gender.MALE,
-//                        "Cheerful",
-//                        "Clingy",
-//                        "beige",
-//                        true,
-//                        true,
-//                        true,
-//                        true,
-//                        10,
-//                        250.0,
-//                        Pet.Status.AVAILABLE,
-//                        true,
-//                        true,
-//                        "Nearly blind"));
-
-        // pet owner
-        var petOwner =  new PetOwner(
-                "alice@gmail.com",
-                "password123",
-                "Alice",
-                "Gold",
-                new Location(
-                        "Paris",
-                        "75000",
-                        "Champs-elysee"
-                ),
-                User.Role.PET_OWNER
+        var pepper = addPet(UUID.fromString("b8d0c81d-e1c6-4708-bd02-d218a23e4805"),
+                new Pet("Pepper",
+                        "Dog",
+                        "Labrador",
+                        false,
+                        Pet.Gender.FEMALE,
+                        "Cute and friendly",
+                        "Playful",
+                        "black",
+                        false,
+                        true,
+                        true,
+                        true,
+                        2,
+                        200.0,
+                        Pet.Status.AVAILABLE,
+                        true,
+                        true,
+                        "None")
         );
 
-        var alice = addPetOwner(UUID.fromString("d79b117e-6cd5-44f0-8ab0-8c87ccda04f0"), petOwner);
+        var nala = addPet(UUID.fromString("358e3775-682a-4b85-a2e1-d3bf0632baea"),
+                new Pet("Nala",
+                        "Dog",
+                        "Shih-tzu",
+                        true,
+                        Pet.Gender.FEMALE,
+                        "Cheerful dog",
+                        "Independant",
+                        "beige",
+                        true,
+                        true,
+                        true,
+                        true,
+                        11,
+                        250.0,
+                        Pet.Status.AVAILABLE,
+                        true,
+                        true,
+                        "Cyst on back"));
 
-        // Adopter
-        var adopter = new Adopter(
+        var simba = addPet(UUID.fromString("17792447-fd66-464b-b27c-615a7d420d05"),
+                new Pet("Simba",
+                        "Dog",
+                        "Shih-tzu",
+                        true,
+                        Pet.Gender.MALE,
+                        "Cheerful",
+                        "Clingy",
+                        "beige",
+                        true,
+                        true,
+                        true,
+                        true,
+                        10,
+                        250.0,
+                        Pet.Status.AVAILABLE,
+                        true,
+                        true,
+                        "Nearly blind"));
+
+        /*
+         CREATE PET OWNERS
+         */
+
+        var alice = addPetOwner(UUID.fromString("d79b117e-6cd5-44f0-8ab0-8c87ccda04f0"),
+                new PetOwner(
+                        "alice@gmail.com",
+                        "password123",
+                        "Alice",
+                        "Gold",
+                        new Location(
+                                "Paris",
+                                "75000",
+                                "Champs-elysee"
+                        ),
+                        User.Role.PET_OWNER
+                ));
+
+        var bernard = addPetOwner(
+                UUID.fromString("c3498ff2-92af-4bf0-b6a2-6230baba08f6"),
+                new PetOwner(
+                        "bernard@gmail.com",
+                        "password",
+                        "Bernard",
+                        "Jean",
+                        new Location("Chambesy", "1000", "rue la fontaine"),
+                        User.Role.PET_OWNER
+                ));
+
+        /*
+        CREATE ADOPTERS
+         */
+        var bob = addAdopter(UUID.fromString("312e2c8e-893a-4cbf-b0e3-f1412ad8a9c2"),
+                new Adopter(
                 "bob@gmail.com",
                 "1234",
                 "Bob",
                 "Sinclar",
                 new Location(
                         "Manhattan",
-                        "12345",
-                        "5th Avenue"
+                        "20900",
+                        "5th ave"
                 ),
                 User.Role.ADOPTER
+                )
         );
-//        var bob = addAdopter(UUID.fromString("8c512725-df7e-4929-9066-6465e5d5d4b0"), adopter );
 
-//        var advertisement = new Advertisement(pepper,alice, pepper.getDescription(),alice.getLocation(), Advertisement.Status.AVAILABLE);
+        var jane = addAdopter(UUID.fromString("fb148060-61a6-4ca2-9ba0-ff88317332d0"),
+                new Adopter(
+                        "jane@gmail.com",
+                        "ilovecats",
+                        "Jane",
+                        "Plane",
+                        new Location(
+                                "Geneva",
+                                "1206",
+                                "Rue de la croix d'or"
+                        ),
+                        User.Role.ADOPTER
+                )
+        );
 
-//        var request = new AdoptionRequest(bob, advertisement, AdoptionRequest.Status.PENDING);
-//        request.getAdopter();
+        /*
+        CREATE ADVERTISEMENTS
+         */
+
+        var advertisementForPepper = addAdvertisement(
+                UUID.fromString("a30dcf15-6fab-4b55-8ebe-b290fb3509df"),
+                new Advertisement(
+                        pepper,
+                        alice,
+                        pepper.getDescription(),
+                        alice.getLocation(),
+                        Advertisement.Status.AVAILABLE
+                )
+        );
+        var advertisementForSimba = addAdvertisement(
+                UUID.fromString("356ba347-299d-48f2-b32e-6bc9144101ec"),
+                new Advertisement(
+                        simba,
+                        bernard,
+                        simba.getDescription(),
+                        bernard.getLocation(),
+                        Advertisement.Status.AVAILABLE
+                )
+        );
+
+        /*
+        CREATE REQUESTS
+         */
+
+//        var requestFromBob = addAdoptionRequest(
+//                UUID.fromString("58e5f60f-2d88-4c3b-984b-6f50a5f983cd"),
+//                new AdoptionRequest(
+//                        bob,
+//                        advertisementForPepper,
+//                        AdoptionRequest.Status.PENDING
+//                )
+//        );
+//
+//        var requestFromJane = addAdoptionRequest(
+//                UUID.fromString("a63d174b-9954-44f1-b1f2-7c3a6918ec9f"),
+//                new AdoptionRequest(
+//                        jane,
+//                        advertisementForSimba,
+//                        AdoptionRequest.Status.PENDING
+//                )
+//        );
 
     }
 }
