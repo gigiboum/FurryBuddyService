@@ -35,7 +35,7 @@ using Postman
 |-----------|-------------|
 | Create    | POST        |
 | Read      | GET         |
-| Update    | POST        |
+| Update    | PUT         |
 | Delete    | DELETE      |
 
 
