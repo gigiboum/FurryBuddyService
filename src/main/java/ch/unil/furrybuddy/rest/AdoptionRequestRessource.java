@@ -1,8 +1,6 @@
 package ch.unil.furrybuddy.rest;
 
-import ch.unil.furrybuddy.domain.Adopter;
 import ch.unil.furrybuddy.domain.AdoptionRequest;
-import ch.unil.furrybuddy.domain.Advertisement;
 import ch.unil.furrybuddy.domain.ApplicationState;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;

@@ -1,7 +1,5 @@
 package ch.unil.furrybuddy.domain;
 
-import ch.unil.furrybuddy.rest.AdoptionRequestRessource;
-import ch.unil.furrybuddy.rest.AdvertisementRessource;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 
@@ -431,7 +429,7 @@ public class ApplicationState {
         );
 
         /*
-        CREATE REQUESTS
+        CREATE REQUESTS TODO
          */
 
 //        var requestFromBob = addAdoptionRequest(

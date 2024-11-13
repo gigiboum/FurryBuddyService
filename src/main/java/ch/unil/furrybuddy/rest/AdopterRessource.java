@@ -1,6 +1,7 @@
 package ch.unil.furrybuddy.rest;
 
-import ch.unil.furrybuddy.domain.*;
+import ch.unil.furrybuddy.domain.Adopter;
+import ch.unil.furrybuddy.domain.ApplicationState;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
