@@ -10,19 +10,19 @@ import java.util.UUID;
 @ApplicationScoped
 public class ApplicationState {
 
+    private Map<String, UUID> users;
     private Map<UUID, Adopter> adopters;
     private Map<UUID, PetOwner> petOwners;
     private Map<UUID, Pet> pets;
-    private Map<UUID, User> users;
     private Map<UUID, Advertisement> advertisements;
     private Map<UUID, AdoptionRequest> adoptionRequests;
 
     @PostConstruct
     public void init() {
+        users = new TreeMap<>();
         adopters = new TreeMap<>();
         petOwners = new TreeMap<>();
         pets = new TreeMap<>();
-        users = new TreeMap<>();
         advertisements = new TreeMap<>();
         adoptionRequests = new TreeMap<>();
 
@@ -46,10 +46,16 @@ public class ApplicationState {
 
     // READ
     public Pet getPet(UUID petID) {
+        if (!(pets.containsKey(petID))) {
+            throw new IllegalArgumentException("Pet with this ID does not exist!");
+        }
         return pets.get(petID);
     }
 
     public Map<UUID, Pet> getAllPets() {
+        if (pets.isEmpty()) {
+            throw new IllegalArgumentException("There are no pets!");
+        }
         return pets;
     }
 
@@ -82,36 +88,42 @@ public class ApplicationState {
         return addPetOwner(UUID.randomUUID(), petOwner);
     }
 
-    public PetOwner addPetOwner(UUID userID, PetOwner petOwner) {
-//        var email = petOwner.getEmail();
-//        if (email == null || email.isBlank()) {
-//            throw new IllegalArgumentException("PetOwner email is null or empty");
-//        }
-//        if (users.containsKey(email)) {
-//            throw new IllegalArgumentException("PetOwner email already exists");
-//        }
-//        if (petOwner.getPassword() == null || petOwner.getPassword().isBlank()) {
-//            throw new IllegalArgumentException("PetOwner password is null or empty");
-//        }
+    public PetOwner addPetOwner(UUID petOwnerID, PetOwner petOwner) {
+        var email = petOwner.getEmail();
+        if (email == null || email.isBlank()) {
+            throw new IllegalArgumentException("Email is null or empty");
+        }
+        if (users.containsKey(email)) {
+            throw new IllegalArgumentException("A user with this email already exists!");
+        }
+        if (petOwner.getPassword() == null || petOwner.getPassword().isBlank()) {
+            throw new IllegalArgumentException("You must enter a password!");
+        }
 
-        petOwner.setUserID(userID);
-        petOwners.put(userID, petOwner);
-        users.put(userID, petOwner);
+        petOwner.setUserID(petOwnerID);
+        petOwners.put(petOwnerID, petOwner);
+        users.put(email, petOwnerID);
         return petOwner;
     }
 
     // READ
-    public PetOwner getPetOwner(UUID userID) {
-        return petOwners.get(userID);
+    public PetOwner getPetOwner(UUID petOwnerID) {
+        if (!(petOwners.containsKey(petOwnerID))) {
+            throw new IllegalArgumentException("User with this ID does not exist!");
+        }
+        return petOwners.get(petOwnerID);
     }
 
     public Map<UUID, PetOwner> getAllPetOwners() {
+        if (petOwners.isEmpty()) {
+            throw new IllegalArgumentException("There are no pet owners!");
+        }
         return petOwners;
     }
 
     //UPDATE
-    public boolean setPetOwner(UUID userID, PetOwner petOwner) {
-        var thePetOwner = petOwners.get(userID);
+    public boolean setPetOwner(UUID petOwnerID, PetOwner petOwner) {
+        var thePetOwner = petOwners.get(petOwnerID);
         if (thePetOwner == null) {
             return false;
         }
@@ -122,6 +134,9 @@ public class ApplicationState {
     //DELETE
     public boolean removePetOwner(UUID petOwnerID) {
         var petOwner = petOwners.get(petOwnerID);
+        if (!(petOwners.containsKey(petOwnerID))) {
+            throw new IllegalArgumentException("Pet Owner with this ID does not exist!");
+        }
         if (petOwner == null) {
             return false;
         }
@@ -138,36 +153,43 @@ public class ApplicationState {
         return addAdopter(UUID.randomUUID(), adopter);
     }
 
-    public Adopter addAdopter(UUID userID, Adopter adopter) {
-//        var email = adopter.getEmail();
-//        if (email == null || email.isBlank()) {
-//            throw new IllegalArgumentException("Adopter email is null or empty");
-//        }
-//        if (users.containsKey(email)) { //TODO
-//            throw new IllegalArgumentException("Adopter email already exists");
-//        }
-//        if (adopter.getPassword() == null || adopter.getPassword().isBlank()) {
-//            throw new IllegalArgumentException("adopter password is null or empty");
-//        }
+    public Adopter addAdopter(UUID adopterID, Adopter adopter) {
+        var email = adopter.getEmail();
 
-        adopter.setUserID(userID);
-        adopters.put(userID, adopter);
-        users.put(userID, adopter);
+        if (email == null || email.isBlank()) {
+            throw new IllegalArgumentException("Email is null or empty");
+        }
+        if (users.containsKey(email)) {
+            throw new IllegalArgumentException("A user with this email already exists!");
+        }
+        if (adopter.getPassword() == null || adopter.getPassword().isBlank()) {
+            throw new IllegalArgumentException("You must enter a password!");
+        }
+
+        adopter.setUserID(adopterID);
+        adopters.put(adopterID, adopter);
+        users.put(email, adopterID);
         return adopter;
     }
 
     // READ
-    public Adopter getAdopter(UUID userID) {
-        return adopters.get(userID);
+    public Adopter getAdopter(UUID adopterID) {
+        if (!(adopters.containsKey(adopterID))) {
+            throw new IllegalArgumentException("User with this ID does not exist!");
+        }
+        return adopters.get(adopterID);
     }
 
     public Map<UUID, Adopter> getAllAdopters() {
+        if (adopters.isEmpty()) {
+            throw new IllegalArgumentException("There are no adopters!");
+        }
         return adopters;
     }
 
     //UPDATE
-    public boolean setAdopter(UUID userID, Adopter adopter) {
-        var theAdopter = adopters.get(userID);
+    public boolean setAdopter(UUID adopterID, Adopter adopter) {
+        var theAdopter = adopters.get(adopterID);
         if (theAdopter == null) {
             return false;
         }
@@ -178,6 +200,10 @@ public class ApplicationState {
     //DELETE
     public boolean removeAdopter(UUID adopterID) {
         var adopter = adopters.get(adopterID);
+
+        if (!(adopters.containsKey(adopterID))) {
+            throw new IllegalArgumentException("Adopter with this ID does not exist!");
+        }
         if (adopter == null) {
             return false;
         }
@@ -195,18 +221,23 @@ public class ApplicationState {
     }
 
     public Advertisement addAdvertisement(UUID advertisementID, Advertisement advertisement) {
-//        var petownerads = advertisement.getPetOwner().getAdvertisements();
+        advertisement.setAdvertisementID(advertisementID);
         advertisements.put(advertisementID, advertisement);
-//        petownerads.add(advertisement);
         return advertisement;
     }
 
     // READ
     public Advertisement getAdvertisement(UUID advertisementID) {
+        if (!(advertisements.containsKey(advertisementID))) {
+            throw new IllegalArgumentException("Advertisement with this id does not exist!");
+        }
         return advertisements.get(advertisementID);
     }
 
     public Map<UUID, Advertisement> getAllAds() {
+        if (advertisements.isEmpty()) {
+            throw new IllegalArgumentException("No advertisements found!");
+        }
         return advertisements;
     }
 
@@ -240,16 +271,23 @@ public class ApplicationState {
     }
 
     public AdoptionRequest addAdoptionRequest(UUID adoptionRequestID, AdoptionRequest adoptionRequest) {
+        adoptionRequest.setRequestID(adoptionRequestID);
         adoptionRequests.put(adoptionRequestID, adoptionRequest);
         return adoptionRequest;
     }
 
     // READ
     public AdoptionRequest getAdoptionRequest(UUID adoptionRequestID) {
+        if (!(adoptionRequests.containsKey(adoptionRequestID))) {
+            throw new IllegalArgumentException("No advertisement with this ID found!");
+        }
         return adoptionRequests.get(adoptionRequestID);
     }
 
     public Map<UUID, AdoptionRequest> getAllAdoptionRequests() {
+        if (adoptionRequests.isEmpty()) {
+            throw new IllegalArgumentException("No adoption requests found!");
+        }
         return adoptionRequests;
     }
 
@@ -266,6 +304,9 @@ public class ApplicationState {
     //DELETE
     public boolean removeAdoptionRequest(UUID adoptionRequestID) {
         var adoptionRequest = adoptionRequests.get(adoptionRequestID);
+        if (!(adoptionRequests.containsKey(adoptionRequestID))) {
+            throw new IllegalArgumentException("Adoption request with this ID does not exist!");
+        }
         if (adoptionRequest == null) {
             return false;
         }
@@ -417,6 +458,7 @@ public class ApplicationState {
                         Advertisement.Status.AVAILABLE
                 )
         );
+
         var advertisementForSimba = addAdvertisement(
                 UUID.fromString("356ba347-299d-48f2-b32e-6bc9144101ec"),
                 new Advertisement(
@@ -429,26 +471,26 @@ public class ApplicationState {
         );
 
         /*
-        CREATE REQUESTS TODO
+        CREATE REQUESTS
          */
 
-//        var requestFromBob = addAdoptionRequest(
-//                UUID.fromString("58e5f60f-2d88-4c3b-984b-6f50a5f983cd"),
-//                new AdoptionRequest(
-//                        bob,
-//                        advertisementForPepper,
-//                        AdoptionRequest.Status.PENDING
-//                )
-//        );
-//
-//        var requestFromJane = addAdoptionRequest(
-//                UUID.fromString("a63d174b-9954-44f1-b1f2-7c3a6918ec9f"),
-//                new AdoptionRequest(
-//                        jane,
-//                        advertisementForSimba,
-//                        AdoptionRequest.Status.PENDING
-//                )
-//        );
+        var requestFromBob = addAdoptionRequest(
+                UUID.fromString("58e5f60f-2d88-4c3b-984b-6f50a5f983cd"),
+                new AdoptionRequest(
+                        bob,
+                        advertisementForPepper,
+                        AdoptionRequest.Status.PENDING
+                )
+        );
+
+        var requestFromJane = addAdoptionRequest(
+                UUID.fromString("a63d174b-9954-44f1-b1f2-7c3a6918ec9f"),
+                new AdoptionRequest(
+                        jane,
+                        advertisementForSimba,
+                        AdoptionRequest.Status.PENDING
+                )
+        );
 
     }
 }
