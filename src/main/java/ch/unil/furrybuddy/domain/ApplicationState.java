@@ -221,6 +221,10 @@ public class ApplicationState {
     }
 
     public Advertisement addAdvertisement(UUID advertisementID, Advertisement advertisement) {
+//        var pet = advertisement.getPet();
+//        if(pets.containsKey(pet.getPetID())) {
+//            throw new IllegalArgumentException("Pet with this ID already exists!");
+//        }
         advertisement.setAdvertisementID(advertisementID);
         advertisements.put(advertisementID, advertisement);
         return advertisement;
@@ -445,40 +449,21 @@ public class ApplicationState {
         );
 
         /*
-        CREATE ADVERTISEMENTS
+        CREATE ADVERTISEMENT
          */
 
-        var advertisementForPepper = addAdvertisement(
-                UUID.fromString("a30dcf15-6fab-4b55-8ebe-b290fb3509df"),
-                new Advertisement(
-                        pepper,
-                        alice,
-                        pepper.getDescription(),
-                        alice.getLocation(),
-                        Advertisement.Status.AVAILABLE
-                )
-        );
+        var advertisementForSimba = bernard.createAdvertisement(simba);
+        addAdvertisement(UUID.fromString("356ba347-299d-48f2-b32e-6bc9144101ec"), advertisementForSimba);
 
-        var advertisementForSimba = addAdvertisement(
-                UUID.fromString("356ba347-299d-48f2-b32e-6bc9144101ec"),
-                new Advertisement(
-                        simba,
-                        bernard,
-                        simba.getDescription(),
-                        bernard.getLocation(),
-                        Advertisement.Status.AVAILABLE
-                )
-        );
 
         /*
         CREATE REQUESTS
          */
-
         var requestFromBob = addAdoptionRequest(
                 UUID.fromString("58e5f60f-2d88-4c3b-984b-6f50a5f983cd"),
                 new AdoptionRequest(
-                        bob,
-                        advertisementForPepper,
+                        bob.getUserID(),
+                        advertisementForSimba,
                         AdoptionRequest.Status.PENDING
                 )
         );
@@ -486,7 +471,7 @@ public class ApplicationState {
         var requestFromJane = addAdoptionRequest(
                 UUID.fromString("a63d174b-9954-44f1-b1f2-7c3a6918ec9f"),
                 new AdoptionRequest(
-                        jane,
+                        jane.getUserID(),
                         advertisementForSimba,
                         AdoptionRequest.Status.PENDING
                 )
