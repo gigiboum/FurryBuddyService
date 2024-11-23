@@ -318,6 +318,28 @@ public class ApplicationState {
         return true;
     }
 
+    //authentication
+    public UUID authenticate(String email, String password, boolean isPetOwner) {
+        var uuid = users.get(email);
+        if (uuid == null) {
+            return null;
+        }
+        User user;
+        if (isPetOwner) {
+            user = petOwners.get(uuid);
+        } else {
+            user = adopters.get(uuid);
+        }
+        if (user == null) {
+            return null;
+        }
+        // Check if the provided password matches
+        if (user.getPassword().equals(password)) {
+            return uuid; // Authentication successful
+        }
+        throw new IllegalArgumentException("Incorrect password or email");
+    }
+
     // create objects
     private void populateApplicationState() {
 

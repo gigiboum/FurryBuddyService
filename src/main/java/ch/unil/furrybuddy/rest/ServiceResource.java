@@ -32,9 +32,9 @@ public class ServiceResource {
     @Path("/{petOwner}/createAdvertisement")
     public Advertisement createAdvertisement(Advertisement advertisement, @PathParam("petOwner") UUID petOwnerID) {
         var pet = state.getPet(advertisement.getPet().getPetID());
-        state.getPetOwner(petOwnerID).createAdvertisement(pet);
-        state.addAdvertisement(advertisement);
-        return advertisement;
+        Advertisement newAd = state.getPetOwner(petOwnerID).createAdvertisement(pet);
+        state.addAdvertisement(newAd.getAdvertisementID(), newAd);
+        return newAd;
     }
 
     // DELETE AD
@@ -56,7 +56,6 @@ public class ServiceResource {
         var advertisement = state.getAdvertisement(advertisementID);
 
         state.getAdopter(adopterID).createAdoptionRequest(advertisement);
-        state.addAdoptionRequest(adoptionRequest);
         return adoptionRequest;
     }
 
@@ -78,7 +77,9 @@ public class ServiceResource {
     @Path("/{petOwner}/acceptAdoptionRequest/{adoptionReqID}")
     public boolean acceptRequest(@PathParam("petOwner") UUID petOwnerID, @PathParam("adoptionReqID") UUID adoptionRequestID) {
         var request = state.getAdoptionRequest(adoptionRequestID);
+        var advertisement = request.getAdvertisement();
         state.getPetOwner(petOwnerID).acceptRequest(request);
+        state.setAdvertisement(advertisement.getAdvertisementID(), advertisement);
         return true;
     }
 
@@ -93,4 +94,17 @@ public class ServiceResource {
         return true;
     }
 
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Path("/authenticate/{username}/{password}/{role}")
+    public UUID authenticate(@PathParam("username") String username, @PathParam("password") String password, @PathParam("role") String role) {
+        if (role.equals("petOwner")) {
+            return state.authenticate(username, password, true);
+        }
+        if (role.equals("adopter")) {
+            return state.authenticate(username, password, false);
+        }
+        return null;
+    }
 }
