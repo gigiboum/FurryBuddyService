@@ -362,7 +362,6 @@ public class ApplicationState {
                         true,
                         2,
                         200.0,
-                        Pet.Status.AVAILABLE,
                         true,
                         true,
                         "None")
@@ -383,7 +382,6 @@ public class ApplicationState {
                         true,
                         11,
                         250.0,
-                        Pet.Status.AVAILABLE,
                         true,
                         true,
                         "Cyst on back"));
@@ -403,7 +401,6 @@ public class ApplicationState {
                         true,
                         10,
                         250.0,
-                        Pet.Status.AVAILABLE,
                         true,
                         true,
                         "Nearly blind"));
