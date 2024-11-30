@@ -51,6 +51,9 @@ public class ApplicationState {
         }
         return pets.get(petID);
     }
+    public boolean hasPet(UUID petID) {
+        return pets.containsKey(petID);
+    }
 
     public Map<UUID, Pet> getAllPets() {
         if (pets.isEmpty()) {
@@ -221,10 +224,6 @@ public class ApplicationState {
     }
 
     public Advertisement addAdvertisement(UUID advertisementID, Advertisement advertisement) {
-//        var pet = advertisement.getPet();
-//        if(pets.containsKey(pet.getPetID())) {
-//            throw new IllegalArgumentException("Pet with this ID already exists!");
-//        }
         advertisement.setAdvertisementID(advertisementID);
         advertisements.put(advertisementID, advertisement);
         return advertisement;
@@ -354,8 +353,6 @@ public class ApplicationState {
                         false,
                         Pet.Gender.FEMALE,
                         "Cute and friendly",
-                        "Playful",
-                        "black",
                         false,
                         true,
                         true,
@@ -374,8 +371,6 @@ public class ApplicationState {
                         true,
                         Pet.Gender.FEMALE,
                         "Cheerful dog",
-                        "Independant",
-                        "beige",
                         true,
                         true,
                         true,
@@ -393,8 +388,6 @@ public class ApplicationState {
                         true,
                         Pet.Gender.MALE,
                         "Cheerful",
-                        "Clingy",
-                        "beige",
                         true,
                         true,
                         true,
@@ -474,27 +467,20 @@ public class ApplicationState {
         var advertisementForSimba = bernard.createAdvertisement(simba);
         addAdvertisement(UUID.fromString("356ba347-299d-48f2-b32e-6bc9144101ec"), advertisementForSimba);
 
+        var advertisementForNala = bernard.createAdvertisement(nala);
+        addAdvertisement(UUID.fromString("f2a84043-a4bc-42d8-a6c0-21d5719ed0b1"), advertisementForNala);
+
+        var advertisementForPepper = alice.createAdvertisement(pepper);
+        addAdvertisement(UUID.fromString("7e6d6935-c2e3-4d2b-b649-72e0a16a1eb1"), advertisementForPepper);
 
         /*
         CREATE REQUESTS
          */
-        var requestFromBob = addAdoptionRequest(
-                UUID.fromString("58e5f60f-2d88-4c3b-984b-6f50a5f983cd"),
-                new AdoptionRequest(
-                        bob.getUserID(),
-                        advertisementForSimba,
-                        AdoptionRequest.Status.PENDING
-                )
-        );
+        var requestFromJane = jane.createAdoptionRequest(advertisementForSimba);
+        addAdoptionRequest(UUID.fromString("a63d174b-9954-44f1-b1f2-7c3a6918ec9f"), requestFromJane);
 
-        var requestFromJane = addAdoptionRequest(
-                UUID.fromString("a63d174b-9954-44f1-b1f2-7c3a6918ec9f"),
-                new AdoptionRequest(
-                        jane.getUserID(),
-                        advertisementForSimba,
-                        AdoptionRequest.Status.PENDING
-                )
-        );
+        var requestFromBob = bob.createAdoptionRequest(advertisementForSimba);
+        addAdoptionRequest(UUID.fromString("58e5f60f-2d88-4c3b-984b-6f50a5f983cd"), requestFromBob);
 
     }
 }

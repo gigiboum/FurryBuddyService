@@ -3,6 +3,7 @@ package ch.unil.furrybuddy.rest;
 import ch.unil.furrybuddy.domain.AdoptionRequest;
 import ch.unil.furrybuddy.domain.Advertisement;
 import ch.unil.furrybuddy.domain.ApplicationState;
+import ch.unil.furrybuddy.domain.Pet;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -31,9 +32,20 @@ public class ServiceResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("/{petOwner}/createAdvertisement")
     public Advertisement createAdvertisement(Advertisement advertisement, @PathParam("petOwner") UUID petOwnerID) {
-        var pet = state.getPet(advertisement.getPet().getPetID());
+        Pet pet = advertisement.getPet();
+
+        // Check if the Pet exists
+        if (pet.getPetID() == null || !state.hasPet(pet.getPetID())) {
+            // Generate a new ID for the Pet
+            pet.setPetID(UUID.randomUUID());
+            state.addPet(pet.getPetID(), pet); // Assuming there's a method to add a Pet to the state
+            System.out.println("New Pet created with ID: " + pet.getPetID());
+        }
+
+        // Create the Advertisement
         Advertisement newAd = state.getPetOwner(petOwnerID).createAdvertisement(pet);
         state.addAdvertisement(newAd.getAdvertisementID(), newAd);
+        state.addAdvertisement(newAd);
         return newAd;
     }
 
@@ -51,12 +63,12 @@ public class ServiceResource {
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @Path("/{adopter}/createAdoptionRequest/{adID}")
-    public AdoptionRequest createAdoptionRequest(AdoptionRequest adoptionRequest, @PathParam("adID") UUID advertisementID, @PathParam("adopter") UUID adopterID) {
-        var advertisement = state.getAdvertisement(advertisementID);
-
-        state.getAdopter(adopterID).createAdoptionRequest(advertisement);
-        return adoptionRequest;
+    @Path("/{adopter}/createAdoptionRequest")
+    public AdoptionRequest createAdoptionRequest(AdoptionRequest adoptionRequest, @PathParam("adopter") UUID adopterID) {
+        var advertisement = state.getAdvertisement(adoptionRequest.getAdvertisement().getAdvertisementID());
+        AdoptionRequest newAdoptionRequest = state.getAdopter(adopterID).createAdoptionRequest(advertisement);
+        state.addAdoptionRequest(newAdoptionRequest.getRequestID(), adoptionRequest);
+        return newAdoptionRequest;
     }
 
     // CANCEL ADOPTION REQUEST
