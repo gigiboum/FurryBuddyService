@@ -10,6 +10,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Path("/service")
@@ -68,6 +69,7 @@ public class ServiceResource {
         var advertisement = state.getAdvertisement(adoptionRequest.getAdvertisement().getAdvertisementID());
         AdoptionRequest newAdoptionRequest = state.getAdopter(adopterID).createAdoptionRequest(advertisement);
         state.addAdoptionRequest(newAdoptionRequest.getRequestID(), adoptionRequest);
+        state.addAdoptionRequest(newAdoptionRequest);
         return newAdoptionRequest;
     }
 
@@ -118,5 +120,17 @@ public class ServiceResource {
             return state.authenticate(username, password, false);
         }
         return null;
+    }
+
+    // FILTER THROUGH ADS
+    @GET
+    @Path("/advertisements/filter")
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<Advertisement> filterAdvertisements(
+            @QueryParam("species") String species,
+            @QueryParam("breed") String breed,
+            @QueryParam("gender") String gender,
+            @QueryParam("compatibility") List<String> compatibility) {
+        return state.filterAdvertisements(species, breed, gender, compatibility);
     }
 }

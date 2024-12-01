@@ -3,9 +3,11 @@ package ch.unil.furrybuddy.domain;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class ApplicationState {
@@ -262,6 +264,42 @@ public class ApplicationState {
         }
         advertisements.remove(advertisementID);
         return true;
+    }
+
+    //FILTER
+    public List<Advertisement> filterAdvertisements(String species, String breed, String gender, List<String> compatibility) {
+        return advertisements.values().stream()
+                .filter(ad -> species == null || species.isEmpty() || species.equals(ad.getPet().getSpecies()))
+                .filter(ad -> breed == null || breed.isEmpty() || breed.equals(ad.getPet().getBreed()))
+                .filter(ad -> gender == null || gender.isEmpty() || matchesGender(ad.getPet().getGender(), gender))
+                .filter(ad -> matchesCompatibility(ad.getPet(), compatibility))
+                .collect(Collectors.toList());
+    }
+
+    private boolean matchesGender(Pet.Gender petGender, String selectedGender) {
+        return selectedGender == null || selectedGender.isEmpty() ||
+                (petGender != null && petGender.name().equalsIgnoreCase(selectedGender));
+    }
+
+    private boolean matchesCompatibility(Pet pet, List<String> compatibility) {
+        if (compatibility == null || compatibility.isEmpty()) {
+            return true; // No compatibility filter applied
+        }
+
+        boolean match = true;
+        if (compatibility.contains("Good with Kids")) {
+            match &= pet.isCompatibleWithKids();
+        }
+        if (compatibility.contains("Good with Other Animals")) {
+            match &= pet.isCompatibleWithOtherAnimals();
+        }
+        if (compatibility.contains("Suitable for Inexperienced Owners")) {
+            match &= pet.isCompatibleWithInexperiencedOwners();
+        }
+        if (compatibility.contains("Suitable for Families")) {
+            match &= pet.isCompatibleWithFamilies();
+        }
+        return match;
     }
 
     //ADOPTION REQUESTS
