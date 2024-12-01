@@ -67,7 +67,7 @@ public class ServiceResource {
     @Path("/{adopter}/createAdoptionRequest")
     public AdoptionRequest createAdoptionRequest(AdoptionRequest adoptionRequest, @PathParam("adopter") UUID adopterID) {
         var advertisement = state.getAdvertisement(adoptionRequest.getAdvertisement().getAdvertisementID());
-        AdoptionRequest newAdoptionRequest = state.getAdopter(adopterID).createAdoptionRequest(advertisement);
+        AdoptionRequest newAdoptionRequest = state.getAdopter(adopterID).createAdoptionRequest(advertisement, adoptionRequest.getMessage());
         state.addAdoptionRequest(newAdoptionRequest.getRequestID(), adoptionRequest);
         state.addAdoptionRequest(newAdoptionRequest);
         return newAdoptionRequest;

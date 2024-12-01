@@ -313,6 +313,7 @@ public class ApplicationState {
 
     public AdoptionRequest addAdoptionRequest(UUID adoptionRequestID, AdoptionRequest adoptionRequest) {
         adoptionRequest.setRequestID(adoptionRequestID);
+        adoptionRequest.setMessage(adoptionRequest.getMessage());
         adoptionRequests.put(adoptionRequestID, adoptionRequest);
         return adoptionRequest;
     }
@@ -514,10 +515,10 @@ public class ApplicationState {
         /*
         CREATE REQUESTS
          */
-        var requestFromJane = jane.createAdoptionRequest(advertisementForSimba);
+        var requestFromJane = jane.createAdoptionRequest(advertisementForSimba, "hello, i am interested in adopting this dog. Please contact me at +41 77 888 43 43");
         addAdoptionRequest(UUID.fromString("a63d174b-9954-44f1-b1f2-7c3a6918ec9f"), requestFromJane);
 
-        var requestFromBob = bob.createAdoptionRequest(advertisementForSimba);
+        var requestFromBob = bob.createAdoptionRequest(advertisementForSimba, "Hi there! Very much interested in Simba!");
         addAdoptionRequest(UUID.fromString("58e5f60f-2d88-4c3b-984b-6f50a5f983cd"), requestFromBob);
 
     }
