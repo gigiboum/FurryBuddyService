@@ -18,6 +18,37 @@ public class ServiceResource {
     @Inject
     private ApplicationState state;
 
+    // DB
+    @GET
+    @Produces(MediaType.TEXT_PLAIN)
+    @Path("/populateDB")
+    public Response populateDB() {
+        state.populateDB();
+        return Response.ok("FurryBuddy DB was populated at " + LocalDateTime.now()).build();
+    }
+
+    @GET
+    @Produces(MediaType.TEXT_PLAIN)
+    @Path("/clearDB")
+    public Response clearDB() {
+        try {
+            state.clearDB();
+        } catch (Exception e) {
+            return Response.serverError().entity(e.getMessage()).build();
+        }
+        state.clearDB();
+        return Response.ok("FurryBuddy DB was cleared at " + LocalDateTime.now()).build();
+    }
+
+    @GET
+    @Produces(MediaType.TEXT_PLAIN)
+    @Path("/resetDB")
+    public Response resetDB() {
+        state.resetDB();
+        return Response.ok("FurryBuddy DB was reset at " + LocalDateTime.now()).build();
+    }
+
+
     // RESET SERVICE
     @GET
     @Produces(MediaType.TEXT_PLAIN)

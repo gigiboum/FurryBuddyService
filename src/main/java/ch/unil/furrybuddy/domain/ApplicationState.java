@@ -2,6 +2,9 @@ package ch.unil.furrybuddy.domain;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.transaction.Transactional;
 
 import java.util.List;
 import java.util.Map;
@@ -19,6 +22,9 @@ public class ApplicationState {
     private Map<UUID, Advertisement> advertisements;
     private Map<UUID, AdoptionRequest> adoptionRequests;
 
+    @PersistenceContext
+    private EntityManager em;
+
     @PostConstruct
     public void init() {
         users = new TreeMap<>();
@@ -28,11 +34,114 @@ public class ApplicationState {
         advertisements = new TreeMap<>();
         adoptionRequests = new TreeMap<>();
 
-        populateApplicationState();
+        var allAdopters = findAllAdopters();
+        for (var adopter : allAdopters) {
+            adopters.put(adopter.getUserID(), adopter);
+            users.put(adopter.getEmail(), adopter.getUserID());
+        }
+
+        var allPetOwners = findAllPetOwners();
+        for (var petowner : allPetOwners) {
+            petOwners.put(petowner.getUserID(), petowner);
+            users.put(petowner.getEmail(), petowner.getUserID());
+        }
+
+        var allAdvertisements = findAllAdvertisements();
+        for(var advertisement : allAdvertisements){
+            advertisements.put(advertisement.getAdvertisementID(), advertisement);
+        }
+
+        var allAdoptionRequests = findAllAdoptionRequests();
+        for(var adoptionRequest : allAdoptionRequests){
+            adoptionRequests.put(adoptionRequest.getRequestID(), adoptionRequest);
+        }
+
+        var allPets = findAllPets();
+        for(var pet : allPets){
+            pets.put(pet.getPetID(), pet);
+        }
     }
+
+    // DB
+    private void clearObjects() {
+        adopters.clear();
+        petOwners.clear();
+        users.clear();
+        pets.clear();
+        advertisements.clear();
+        adoptionRequests.clear();
+    }
+
+    private void clearTables() {
+        // Disable foreign key checks
+        em.createNativeQuery("SET FOREIGN_KEY_CHECKS = 0").executeUpdate();
+
+        // Get all table names in the studybuddy schema
+        List<String> tables = (List<String>) em
+                .createNativeQuery("SELECT table_name FROM information_schema.tables WHERE table_schema = 'furrybuddy'")
+                .getResultList();
+
+        // Avoid removing the sequence table
+        tables.remove("SEQUENCE");
+
+        // Truncate each table
+        for (String table : tables) {
+            em.createNativeQuery("TRUNCATE TABLE " + table).executeUpdate();
+        }
+
+        // Re-enable foreign key checks
+        em.createNativeQuery("SET FOREIGN_KEY_CHECKS = 1").executeUpdate();
+    }
+
+    public List<Adopter> findAllAdopters() {
+        return em.createQuery("SELECT c FROM Adopter c", Adopter.class).getResultList();
+    }
+
+    public List<PetOwner> findAllPetOwners() {
+        return em.createQuery("SELECT c FROM PetOwner c", PetOwner.class).getResultList();
+    }
+
+    public List<Advertisement> findAllAdvertisements() {
+        return em.createQuery("SELECT c FROM Advertisement c", Advertisement.class).getResultList();
+    }
+
+    public List<AdoptionRequest> findAllAdoptionRequests() {
+        return em.createQuery("SELECT c FROM AdoptionRequest c", AdoptionRequest.class).getResultList();
+    }
+
+    public List<Pet> findAllPets() {
+        return em.createQuery("SELECT c FROM Pet c", Pet.class).getResultList();
+    }
+
+    @Transactional
+    public void clearDB() {
+        clearObjects();
+        clearTables();
+    }
+
+    @Transactional
+    public void populateDB() {
+        clearObjects();
+        populateApplicationState();
+//      populateUsers();
+        for (var adopter : adopters.values()) {
+            em.persist(adopter);
+        }
+        for (var petowner : petOwners.values()) {
+            em.persist(petowner);
+        }
+    }
+
+    @Transactional
+    public void resetDB() {
+        clearDB();
+        populateDB();
+    }
+
 
     // PET
     // CREATE
+    @Transactional
     public Pet addPet(Pet pet) {
         if (pet.getPetID() != null) {
             return addPet(pet.getPetID(), pet);
@@ -40,9 +149,11 @@ public class ApplicationState {
         return addPet(UUID.randomUUID(), pet);
     }
 
+    @Transactional
     public Pet addPet(UUID petID, Pet pet) {
         pet.setPetID(petID);
         pets.put(petID, pet);
+        em.persist(pet);
         return pet;
     }
 
@@ -65,12 +176,14 @@ public class ApplicationState {
     }
 
     // UPDATE
+    @Transactional
     public boolean setPet(UUID petID, Pet pet) {
         var thePet = pets.get(petID);
         if (thePet == null) {
             return false;
         }
         thePet.replaceWith(pet);
+        em.merge(pet);
         return true;
     }
 
@@ -86,6 +199,7 @@ public class ApplicationState {
 
     // PET OWNER
     // CREATE
+    @Transactional
     public PetOwner addPetOwner(PetOwner petOwner) {
         if (petOwner.getUserID() != null) {
             return addPetOwner(petOwner.getUserID(), petOwner);
@@ -93,6 +207,7 @@ public class ApplicationState {
         return addPetOwner(UUID.randomUUID(), petOwner);
     }
 
+    @Transactional
     public PetOwner addPetOwner(UUID petOwnerID, PetOwner petOwner) {
         var email = petOwner.getEmail();
         if (email == null || email.isBlank()) {
@@ -108,6 +223,7 @@ public class ApplicationState {
         petOwner.setUserID(petOwnerID);
         petOwners.put(petOwnerID, petOwner);
         users.put(email, petOwnerID);
+        em.persist(petOwner);
         return petOwner;
     }
 
@@ -127,12 +243,14 @@ public class ApplicationState {
     }
 
     //UPDATE
+    @Transactional
     public boolean setPetOwner(UUID petOwnerID, PetOwner petOwner) {
         var thePetOwner = petOwners.get(petOwnerID);
         if (thePetOwner == null) {
             return false;
         }
         thePetOwner.replaceWith(petOwner);
+        em.merge(petOwner);
         return true;
     }
 
@@ -151,6 +269,7 @@ public class ApplicationState {
 
     // ADOPTER
     // CREATE
+    @Transactional
     public Adopter addAdopter(Adopter adopter) {
         if (adopter.getUserID() != null) {
             return addAdopter(adopter.getUserID(), adopter);
@@ -158,6 +277,7 @@ public class ApplicationState {
         return addAdopter(UUID.randomUUID(), adopter);
     }
 
+    @Transactional
     public Adopter addAdopter(UUID adopterID, Adopter adopter) {
         var email = adopter.getEmail();
 
@@ -174,6 +294,7 @@ public class ApplicationState {
         adopter.setUserID(adopterID);
         adopters.put(adopterID, adopter);
         users.put(email, adopterID);
+        em.persist(adopter);
         return adopter;
     }
 
@@ -193,12 +314,14 @@ public class ApplicationState {
     }
 
     //UPDATE
+    @Transactional
     public boolean setAdopter(UUID adopterID, Adopter adopter) {
         var theAdopter = adopters.get(adopterID);
         if (theAdopter == null) {
             return false;
         }
         theAdopter.replaceWith(adopter);
+        em.merge(adopter);
         return true;
     }
 
@@ -218,6 +341,7 @@ public class ApplicationState {
 
     //ADVERTISEMENTS
     //CREATE
+    @Transactional
     public Advertisement addAdvertisement(Advertisement advertisement) {
         if (advertisement.getAdvertisementID() != null) {
             return addAdvertisement(advertisement.getAdvertisementID(), advertisement);
@@ -225,9 +349,11 @@ public class ApplicationState {
         return addAdvertisement(UUID.randomUUID(), advertisement);
     }
 
+    @Transactional
     public Advertisement addAdvertisement(UUID advertisementID, Advertisement advertisement) {
         advertisement.setAdvertisementID(advertisementID);
         advertisements.put(advertisementID, advertisement);
+        em.persist(advertisement);
         return advertisement;
     }
 
@@ -247,12 +373,14 @@ public class ApplicationState {
     }
 
     //UPDATE
+    @Transactional
     public boolean setAdvertisement(UUID advertisementID, Advertisement advertisement) {
         var theAdvertisement = advertisements.get(advertisementID);
         if (theAdvertisement == null) {
             return false;
         }
         theAdvertisement.replaceWith(advertisement);
+        em.merge(advertisement);
         return true;
     }
 
@@ -304,6 +432,7 @@ public class ApplicationState {
 
     //ADOPTION REQUESTS
     //CREATE
+    @Transactional
     public AdoptionRequest addAdoptionRequest(AdoptionRequest adoptionRequest) {
         if (adoptionRequest.getRequestID() != null) {
             return addAdoptionRequest(adoptionRequest.getRequestID(), adoptionRequest);
@@ -311,14 +440,17 @@ public class ApplicationState {
         return addAdoptionRequest(UUID.randomUUID(), adoptionRequest);
     }
 
+    @Transactional
     public AdoptionRequest addAdoptionRequest(UUID adoptionRequestID, AdoptionRequest adoptionRequest) {
         adoptionRequest.setRequestID(adoptionRequestID);
         adoptionRequest.setMessage(adoptionRequest.getMessage());
         adoptionRequests.put(adoptionRequestID, adoptionRequest);
+        em.persist(adoptionRequest);
         return adoptionRequest;
     }
 
     // READ
+    @Transactional
     public AdoptionRequest getAdoptionRequest(UUID adoptionRequestID) {
         if (!(adoptionRequests.containsKey(adoptionRequestID))) {
             throw new IllegalArgumentException("No advertisement with this ID found!");
@@ -334,12 +466,14 @@ public class ApplicationState {
     }
 
     //UPDATE
+    @Transactional
     public boolean setAdoptionRequest(UUID adoptionRequestID, AdoptionRequest adoptionRequest) {
         var theAdoptionRequest = adoptionRequests.get(adoptionRequestID);
         if (theAdoptionRequest == null) {
             return false;
         }
         theAdoptionRequest.replaceWith(adoptionRequest);
+        em.merge(adoptionRequest);
         return true;
     }
 
@@ -376,6 +510,68 @@ public class ApplicationState {
             return uuid; // Authentication successful
         }
         throw new IllegalArgumentException("Incorrect password or email");
+    }
+
+    // DB testing
+    private void populateUsers(){
+        var alice = addPetOwner(UUID.fromString("d79b117e-6cd5-44f0-8ab0-8c87ccda04f0"),
+                new PetOwner(
+                        "alice@gmail.com",
+                        "password123",
+                        "Alice",
+                        "Gold",
+                        new Location(
+                                "Paris",
+                                "75000",
+                                "Champs-elysee"
+                        ),
+                        User.Role.PET_OWNER
+                ));
+
+        var bernard = addPetOwner(
+                UUID.fromString("c3498ff2-92af-4bf0-b6a2-6230baba08f6"),
+                new PetOwner(
+                        "bernard@gmail.com",
+                        "password",
+                        "Bernard",
+                        "Jean",
+                        new Location("Chambesy", "1000", "rue la fontaine"),
+                        User.Role.PET_OWNER
+                ));
+
+        /*
+        CREATE ADOPTERS
+         */
+        var bob = addAdopter(UUID.fromString("312e2c8e-893a-4cbf-b0e3-f1412ad8a9c2"),
+                new Adopter(
+                        "bob@gmail.com",
+                        "1234",
+                        "Bob",
+                        "Sinclar",
+                        new Location(
+                                "Manhattan",
+                                "20900",
+                                "5th ave"
+                        ),
+                        User.Role.ADOPTER
+                )
+        );
+
+        var jane = addAdopter(UUID.fromString("fb148060-61a6-4ca2-9ba0-ff88317332d0"),
+                new Adopter(
+                        "jane@gmail.com",
+                        "ilovecats",
+                        "Jane",
+                        "Plane",
+                        new Location(
+                                "Geneva",
+                                "1206",
+                                "Rue de la croix d'or"
+                        ),
+                        User.Role.ADOPTER
+                )
+        );
+
     }
 
     // create objects
