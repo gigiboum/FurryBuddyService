@@ -1,9 +1,6 @@
 package ch.unil.furrybuddy.rest;
 
-import ch.unil.furrybuddy.domain.AdoptionRequest;
-import ch.unil.furrybuddy.domain.Advertisement;
-import ch.unil.furrybuddy.domain.ApplicationState;
-import ch.unil.furrybuddy.domain.Pet;
+import ch.unil.furrybuddy.domain.*;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -76,7 +73,6 @@ public class ServiceResource {
 
         // Create the Advertisement
         Advertisement newAd = state.getPetOwner(petOwnerID).createAdvertisement(pet);
-        state.addAdvertisement(newAd.getAdvertisementID(), newAd);
         state.addAdvertisement(newAd);
         return newAd;
     }
@@ -87,7 +83,7 @@ public class ServiceResource {
     @Path("/{petOwner}/deleteAdvertisement/{adID}")
     public boolean deleteAdvertisement(@PathParam("petOwner") UUID petOwnerID, @PathParam("adID") UUID advertisementID) {
         var ad = state.getAdvertisement(advertisementID);
-        state.getPetOwner(petOwnerID).deleteAdvertisement(ad);
+//        state.getPetOwner(petOwnerID).deleteAdvertisement(ad);
         return state.removeAdvertisement(advertisementID);
     }
 
@@ -109,10 +105,11 @@ public class ServiceResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("/{adopter}/cancelAdoptionRequest/{adID}")
-    public AdoptionRequest deleteAdoptionRequest(@PathParam("adopter") UUID adopterID, @PathParam("adID") UUID adoptionRequestID) {
+    public AdoptionRequest cancelAdoptionRequest(@PathParam("adopter") UUID adopterID, @PathParam("adID") UUID adoptionRequestID) {
         var adoptionRequest = state.getAdoptionRequest(adoptionRequestID);
-        state.getAdopter(adopterID).cancelAdoptionRequest(adoptionRequest);
-        return adoptionRequest;
+        AdoptionRequest cancelledAdoptionRequest = state.cancelAdoptionRequest(adoptionRequest);
+        state.setAdoptionRequest(adoptionRequestID, cancelledAdoptionRequest);
+        return cancelledAdoptionRequest;
     }
 
     //ACCEPT AR
@@ -122,20 +119,20 @@ public class ServiceResource {
     @Path("/{petOwner}/acceptAdoptionRequest/{adoptionReqID}")
     public boolean acceptRequest(@PathParam("petOwner") UUID petOwnerID, @PathParam("adoptionReqID") UUID adoptionRequestID) {
         var request = state.getAdoptionRequest(adoptionRequestID);
-        var advertisement = request.getAdvertisement();
-        state.getPetOwner(petOwnerID).acceptRequest(request);
-        state.setAdvertisement(advertisement.getAdvertisementID(), advertisement);
+        AdoptionRequest acceptRequest = state.acceptAdoptionRequest(request);
+        state.setAdoptionRequest(adoptionRequestID, acceptRequest);
         return true;
     }
 
-    //ACCEPT AR
+    //REJECT AR
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("/{petOwner}/rejectAdoptionRequest/{adoptionReqID}")
     public boolean rejectAdoptionRequest(@PathParam("petOwner") UUID petOwnerID, @PathParam("adoptionReqID") UUID adoptionRequestID) {
         var request = state.getAdoptionRequest(adoptionRequestID);
-        state.getPetOwner(petOwnerID).rejectRequest(request);
+        AdoptionRequest rejecttedAdoptionRequest = state.rejecttAdoptionRequest(request);
+        state.setAdoptionRequest(adoptionRequestID, rejecttedAdoptionRequest);
         return true;
     }
 

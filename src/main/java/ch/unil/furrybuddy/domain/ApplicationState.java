@@ -3,6 +3,7 @@ package ch.unil.furrybuddy.domain;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
 
@@ -123,12 +124,17 @@ public class ApplicationState {
     public void populateDB() {
         clearObjects();
         populateApplicationState();
-//      populateUsers();
         for (var adopter : adopters.values()) {
             em.persist(adopter);
         }
         for (var petowner : petOwners.values()) {
             em.persist(petowner);
+        }
+        for (var adoptionRequest: adoptionRequests.values()){
+            em.persist(adoptionRequest);
+        }
+        for (var advertisement : advertisements.values()){
+            em.persist(advertisement);
         }
     }
 
@@ -188,6 +194,7 @@ public class ApplicationState {
     }
 
     // DELETE
+    @Transactional
     public boolean removePet(UUID petID) {
         var pet = pets.get(petID);
         if (pet == null) {
@@ -255,6 +262,7 @@ public class ApplicationState {
     }
 
     //DELETE
+    @Transactional
     public boolean removePetOwner(UUID petOwnerID) {
         var petOwner = petOwners.get(petOwnerID);
         if (!(petOwners.containsKey(petOwnerID))) {
@@ -326,6 +334,7 @@ public class ApplicationState {
     }
 
     //DELETE
+    @Transactional
     public boolean removeAdopter(UUID adopterID) {
         var adopter = adopters.get(adopterID);
 
@@ -343,6 +352,13 @@ public class ApplicationState {
     //CREATE
     @Transactional
     public Advertisement addAdvertisement(Advertisement advertisement) {
+//        PetOwner petOwner = em.find(PetOwner.class, advertisement.getPetOwnerID());
+//        if (petOwner == null) {
+//            throw new EntityNotFoundException("PetOwner not found with ID: " + advertisement.getPetOwnerID());
+//        }
+        if (advertisements.containsValue(advertisement)) {
+            throw new IllegalArgumentException("Advertisement already exists!");
+        }
         if (advertisement.getAdvertisementID() != null) {
             return addAdvertisement(advertisement.getAdvertisementID(), advertisement);
         }
@@ -352,8 +368,10 @@ public class ApplicationState {
     @Transactional
     public Advertisement addAdvertisement(UUID advertisementID, Advertisement advertisement) {
         advertisement.setAdvertisementID(advertisementID);
+
+        PetOwner petOwner = getPetOwner(advertisement.getPetOwnerID());
         advertisements.put(advertisementID, advertisement);
-        em.persist(advertisement);
+        em.merge(petOwner);
         return advertisement;
     }
 
@@ -375,7 +393,8 @@ public class ApplicationState {
     //UPDATE
     @Transactional
     public boolean setAdvertisement(UUID advertisementID, Advertisement advertisement) {
-        var theAdvertisement = advertisements.get(advertisementID);
+//        var theAdvertisement = advertisements.get(advertisementID);
+        var theAdvertisement = em.find(Advertisement.class, advertisementID);
         if (theAdvertisement == null) {
             return false;
         }
@@ -385,12 +404,28 @@ public class ApplicationState {
     }
 
     //DELETE
+    @Transactional
     public boolean removeAdvertisement(UUID advertisementID) {
         var advertisement = advertisements.get(advertisementID);
         if (advertisement == null) {
             return false;
         }
+
+        // Remove associated AdoptionRequests
+        List<AdoptionRequest> adoptionRequests = em.createQuery(
+                        "SELECT ar FROM AdoptionRequest ar WHERE ar.advertisement = :advertisement",
+                        AdoptionRequest.class)
+                .setParameter("advertisement", advertisement)
+                .getResultList();
+
+        for (AdoptionRequest request : adoptionRequests) {
+            em.remove(request); // Delete each AdoptionRequest
+        }
+
+        PetOwner petOwner = getPetOwner(advertisement.getPetOwnerID());
+        petOwner.deleteAdvertisement(advertisement);
         advertisements.remove(advertisementID);
+        em.merge(petOwner);
         return true;
     }
 
@@ -445,12 +480,13 @@ public class ApplicationState {
         adoptionRequest.setRequestID(adoptionRequestID);
         adoptionRequest.setMessage(adoptionRequest.getMessage());
         adoptionRequests.put(adoptionRequestID, adoptionRequest);
-        em.persist(adoptionRequest);
+
+        Adopter adopter = getAdopter(adoptionRequest.getAdopterID());
+        em.merge(adopter);
         return adoptionRequest;
     }
 
     // READ
-    @Transactional
     public AdoptionRequest getAdoptionRequest(UUID adoptionRequestID) {
         if (!(adoptionRequests.containsKey(adoptionRequestID))) {
             throw new IllegalArgumentException("No advertisement with this ID found!");
@@ -477,7 +513,64 @@ public class ApplicationState {
         return true;
     }
 
+    @Transactional
+    public AdoptionRequest cancelAdoptionRequest(AdoptionRequest adoptionRequest) {
+        // Fetch the AdoptionRequest
+         AdoptionRequest managedRequest = em.find(AdoptionRequest.class, adoptionRequest.getRequestID());
+            if (managedRequest == null) {
+                throw new EntityNotFoundException("AdoptionRequest not found");
+            }
+        // Fetch the Adopter
+        var adopter = em.find(Adopter.class, managedRequest.getAdopterID());
+        if (adopter == null) {
+            throw new EntityNotFoundException("Adopter not found");
+        }
+
+        // Cancel the request
+        adopter.cancelAdoptionRequest(managedRequest);
+        return managedRequest;
+    }
+
+    @Transactional
+    public AdoptionRequest acceptAdoptionRequest(AdoptionRequest adoptionRequest) {
+        // Fetch the AdoptionRequest
+        AdoptionRequest managedRequest = em.find(AdoptionRequest.class, adoptionRequest.getRequestID());
+        if (managedRequest == null) {
+            throw new EntityNotFoundException("AdoptionRequest not found");
+        }
+        // Fetch the Adopter
+        var petowner = getPetOwner(adoptionRequest.getAdvertisement().getPetOwnerID());
+        var managedPetOwner = em.find(PetOwner.class, petowner.getUserID());
+        if (managedPetOwner == null) {
+            throw new EntityNotFoundException("PetOwner not found");
+        }
+
+        // Cancel the request
+        petowner.acceptRequest(managedRequest);
+        return managedRequest;
+    }
+
+    @Transactional
+    public AdoptionRequest rejecttAdoptionRequest(AdoptionRequest adoptionRequest) {
+        // Fetch the AdoptionRequest
+        AdoptionRequest managedRequest = em.find(AdoptionRequest.class, adoptionRequest.getRequestID());
+        if (managedRequest == null) {
+            throw new EntityNotFoundException("AdoptionRequest not found");
+        }
+        // Fetch the Adopter
+        var petowner = getPetOwner(adoptionRequest.getAdvertisement().getPetOwnerID());
+        var managedPetOwner = em.find(PetOwner.class, petowner.getUserID());
+        if (managedPetOwner == null) {
+            throw new EntityNotFoundException("PetOwner not found");
+        }
+
+        // Cancel the request
+        petowner.rejectRequest(managedRequest);
+        return managedRequest;
+    }
+
     //DELETE
+    @Transactional
     public boolean removeAdoptionRequest(UUID adoptionRequestID) {
         var adoptionRequest = adoptionRequests.get(adoptionRequestID);
         if (!(adoptionRequests.containsKey(adoptionRequestID))) {
@@ -510,68 +603,6 @@ public class ApplicationState {
             return uuid; // Authentication successful
         }
         throw new IllegalArgumentException("Incorrect password or email");
-    }
-
-    // DB testing
-    private void populateUsers(){
-        var alice = addPetOwner(UUID.fromString("d79b117e-6cd5-44f0-8ab0-8c87ccda04f0"),
-                new PetOwner(
-                        "alice@gmail.com",
-                        "password123",
-                        "Alice",
-                        "Gold",
-                        new Location(
-                                "Paris",
-                                "75000",
-                                "Champs-elysee"
-                        ),
-                        User.Role.PET_OWNER
-                ));
-
-        var bernard = addPetOwner(
-                UUID.fromString("c3498ff2-92af-4bf0-b6a2-6230baba08f6"),
-                new PetOwner(
-                        "bernard@gmail.com",
-                        "password",
-                        "Bernard",
-                        "Jean",
-                        new Location("Chambesy", "1000", "rue la fontaine"),
-                        User.Role.PET_OWNER
-                ));
-
-        /*
-        CREATE ADOPTERS
-         */
-        var bob = addAdopter(UUID.fromString("312e2c8e-893a-4cbf-b0e3-f1412ad8a9c2"),
-                new Adopter(
-                        "bob@gmail.com",
-                        "1234",
-                        "Bob",
-                        "Sinclar",
-                        new Location(
-                                "Manhattan",
-                                "20900",
-                                "5th ave"
-                        ),
-                        User.Role.ADOPTER
-                )
-        );
-
-        var jane = addAdopter(UUID.fromString("fb148060-61a6-4ca2-9ba0-ff88317332d0"),
-                new Adopter(
-                        "jane@gmail.com",
-                        "ilovecats",
-                        "Jane",
-                        "Plane",
-                        new Location(
-                                "Geneva",
-                                "1206",
-                                "Rue de la croix d'or"
-                        ),
-                        User.Role.ADOPTER
-                )
-        );
-
     }
 
     // create objects
