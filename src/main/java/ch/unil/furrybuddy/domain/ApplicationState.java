@@ -271,6 +271,20 @@ public class ApplicationState {
         if (petOwner == null) {
             return false;
         }
+        petOwner = em.merge(petOwner);
+
+        List<Advertisement> advertisements = em.createQuery(
+                        "SELECT ad FROM Advertisement ad WHERE ad.petOwnerID = :petOwner",
+                        Advertisement.class)
+                .setParameter("petOwner", petOwner.getUserID())
+                .getResultList();
+
+        for (Advertisement advertisement : advertisements) {
+            removeAdvertisement(advertisement.getAdvertisementID());
+            em.remove(advertisement); // Delete each AdoptionRequest
+        }
+
+        em.remove(petOwner);
         petOwners.remove(petOwnerID);
         return true;
     }
@@ -344,6 +358,20 @@ public class ApplicationState {
         if (adopter == null) {
             return false;
         }
+        adopter = em.merge(adopter);
+
+        List<AdoptionRequest> adoptionRequests = em.createQuery(
+                        "SELECT ar FROM AdoptionRequest ar WHERE ar.adopterID = :adopter",
+                        AdoptionRequest.class)
+                .setParameter("adopter", adopter.getUserID())
+                .getResultList();
+
+        for (AdoptionRequest adoptionRequest : adoptionRequests) {
+            removeAdoptionRequest(adoptionRequest.getRequestID());
+            em.remove(adoptionRequest); // Delete each AdoptionRequest
+        }
+
+        em.remove(adopter);
         adopters.remove(adopterID);
         return true;
     }
@@ -521,8 +549,9 @@ public class ApplicationState {
                 throw new EntityNotFoundException("AdoptionRequest not found");
             }
         // Fetch the Adopter
-        var adopter = em.find(Adopter.class, managedRequest.getAdopterID());
-        if (adopter == null) {
+        var adopter = getAdopter(adoptionRequest.getAdopterID());
+        var managedAdopter = em.find(Adopter.class, managedRequest.getAdopterID());
+        if (managedAdopter == null) {
             throw new EntityNotFoundException("Adopter not found");
         }
 

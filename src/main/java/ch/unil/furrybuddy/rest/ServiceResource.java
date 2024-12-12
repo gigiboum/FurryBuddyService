@@ -104,12 +104,12 @@ public class ServiceResource {
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @Path("/{adopter}/cancelAdoptionRequest/{adID}")
-    public AdoptionRequest cancelAdoptionRequest(@PathParam("adopter") UUID adopterID, @PathParam("adID") UUID adoptionRequestID) {
+    @Path("/{adopter}/cancelAdoptionRequest/{requestID}")
+    public boolean cancelAdoptionRequest(@PathParam("adopter") UUID adopterID, @PathParam("requestID") UUID adoptionRequestID) {
         var adoptionRequest = state.getAdoptionRequest(adoptionRequestID);
         AdoptionRequest cancelledAdoptionRequest = state.cancelAdoptionRequest(adoptionRequest);
         state.setAdoptionRequest(adoptionRequestID, cancelledAdoptionRequest);
-        return cancelledAdoptionRequest;
+        return true;
     }
 
     //ACCEPT AR
